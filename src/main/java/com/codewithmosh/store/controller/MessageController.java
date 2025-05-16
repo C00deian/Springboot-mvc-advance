@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MessageController {
-    @RequestMapping("/user")
+    @RequestMapping("/message")
     public Message SayHello() {
         return new Message("Hello World");
     }
