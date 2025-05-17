@@ -1,6 +1,7 @@
 package com.codewithmosh.store.controller;
 
 import com.codewithmosh.store.Dtos.UserDto;
+import com.codewithmosh.store.Dtos.UserRegisterRequest;
 import com.codewithmosh.store.entities.User;
 import com.codewithmosh.store.mappers.UserMapper;
 import com.codewithmosh.store.repositories.UserRepository;
@@ -8,6 +9,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +48,24 @@ public List<UserDto> getAllUsers(
     }
     var userDto = userMapper.toUserDto(user);
     return ResponseEntity.ok(userDto);
+    }
+
+
+    @PostMapping()
+    public ResponseEntity<UserDto> createUser(
+            @RequestBody UserRegisterRequest request,
+            UriComponentsBuilder uriBuilder
+    ){
+
+        //take request to the user
+        var user = userMapper.toEntity(request);
+        //save it to db
+        userRepository.save(user);
+        //send reposnse only needed field
+        var userDto = userMapper.toUserDto(user);
+
+        var uri = uriBuilder.path("/users/{id}").buildAndExpand(userDto.getId()).toUri();
+        return ResponseEntity.created(uri).body(userDto);
     }
 
 }

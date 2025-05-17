@@ -1,6 +1,7 @@
 package com.codewithmosh.store.mappers;
 
 import com.codewithmosh.store.Dtos.UserDto;
+import com.codewithmosh.store.Dtos.UserRegisterRequest;
 import com.codewithmosh.store.entities.User;
 import org.mapstruct.Mapper;
 
@@ -8,5 +9,5 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel ="spring" )
 public interface UserMapper {
     UserDto toUserDto(User user);
-
+    User toEntity(UserRegisterRequest entity);
 }
