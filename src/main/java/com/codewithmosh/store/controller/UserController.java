@@ -2,11 +2,13 @@ package com.codewithmosh.store.controller;
 
 import com.codewithmosh.store.Dtos.UserDto;
 import com.codewithmosh.store.Dtos.UserRegisterRequest;
+import com.codewithmosh.store.Dtos.UserUpdateRequest;
 import com.codewithmosh.store.entities.User;
 import com.codewithmosh.store.mappers.UserMapper;
 import com.codewithmosh.store.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -66,6 +68,23 @@ public List<UserDto> getAllUsers(
 
         var uri = uriBuilder.path("/users/{id}").buildAndExpand(userDto.getId()).toUri();
         return ResponseEntity.created(uri).body(userDto);
+    }
+
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDto> updateUser(
+            @PathVariable(name = "id")   Long id,
+            @RequestBody UserUpdateRequest request
+    ){
+     var user = userRepository.findById(id).orElse(null);
+     if(user == null){
+       return  ResponseEntity.notFound().build();
+     }
+
+     userMapper.update(request , user);
+     userRepository.save(user);
+     return ResponseEntity.ok(userMapper.toUserDto(user));
     }
 
 }
