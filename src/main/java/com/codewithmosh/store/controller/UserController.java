@@ -112,29 +112,17 @@ public List<UserDto> getAllUsers(
     ) {
         var user = userRepository.findById(id).orElse(null);
 
-        if(user == null){
-            return  ResponseEntity.notFound().build();
+        if (user == null) {
+            return ResponseEntity.notFound().build();
         }
 
-        if(!user.getPassword().equals(request.getOldPassword())){
+        if (!user.getPassword().equals(request.getOldPassword())) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
         user.setPassword(request.getNewPassword());
         userRepository.save(user);
         return ResponseEntity.noContent().build();
-    }
-
-//    Extracting validation Error Message
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String , String>> handleValidationErrors(
-            MethodArgumentNotValidException exception
-    ){
-    var  errors = new HashMap<String , String >();
-    exception.getBindingResult().getFieldErrors() .forEach((error) -> {
-        errors.put(error.getField(), error.getDefaultMessage());
-    });
-    return ResponseEntity.badRequest().body(errors);
     }
 }
 
