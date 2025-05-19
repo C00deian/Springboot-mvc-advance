@@ -56,10 +56,15 @@ public List<UserDto> getAllUsers(
 
 
     @PostMapping()
-    public ResponseEntity<UserDto> createUser(
+    public ResponseEntity<?> registerUser(
            @Valid @RequestBody UserRegisterRequest request,
             UriComponentsBuilder uriBuilder
     ){
+
+        var exists = userRepository.existsUserByEmail(request.getEmail());
+        if(exists){
+            return ResponseEntity.badRequest().body(Map.of("email" , "email is already registered."));
+        }
 
         //take request to the user
         var user = userMapper.toEntity(request);
