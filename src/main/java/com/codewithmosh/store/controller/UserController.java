@@ -7,6 +7,7 @@ import com.codewithmosh.store.Dtos.UserUpdateRequest;
 import com.codewithmosh.store.entities.User;
 import com.codewithmosh.store.mappers.UserMapper;
 import com.codewithmosh.store.repositories.UserRepository;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -57,7 +58,7 @@ public List<UserDto> getAllUsers(
 
     @PostMapping()
     public ResponseEntity<UserDto> createUser(
-            @RequestBody UserRegisterRequest request,
+           @Valid @RequestBody UserRegisterRequest request,
             UriComponentsBuilder uriBuilder
     ){
 
