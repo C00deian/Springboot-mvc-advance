@@ -103,4 +103,23 @@ if (cart == null) {
      return ResponseEntity.ok(cartMapper.toCartItemDto(cartItem));
 
     }
+
+
+    @DeleteMapping("/{cartId}/items/{productId}")
+    public ResponseEntity<?> removeItem(
+            @PathVariable UUID cartId,
+            @PathVariable Long productId
+    ){
+
+        var cart = cartRepository.getCartWithItems(cartId).orElse(null);
+        if (cart == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Map.of("error" , "Cart not found")
+            );
+        }
+
+        cart.removeItem(productId);
+        cartRepository.save(cart);
+        return ResponseEntity.noContent().build();
+    }
 }
