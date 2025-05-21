@@ -4,19 +4,18 @@ import com.codewithmosh.store.Dtos.ChangePasswordRequest;
 import com.codewithmosh.store.Dtos.UserDto;
 import com.codewithmosh.store.Dtos.UserRegisterRequest;
 import com.codewithmosh.store.Dtos.UserUpdateRequest;
-import com.codewithmosh.store.entities.User;
+import com.codewithmosh.store.exceptions.EmailAlreadyExistException;
+import com.codewithmosh.store.exceptions.UnauthorizedUserException;
+import com.codewithmosh.store.exceptions.UserNotFoundException;
 import com.codewithmosh.store.mappers.UserMapper;
 import com.codewithmosh.store.repositories.UserRepository;
+import com.codewithmosh.store.services.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.*;
 
@@ -29,58 +28,35 @@ public class UserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
-@GetMapping
-public List<UserDto> getAllUsers(
-        @RequestParam(required = false , defaultValue = "" , name = "sortBy") String sortBy
+    @GetMapping
+    public List<UserDto> getAllUsers(
+        @RequestParam(required = false , defaultValue = "" , name = "sortBy")
+        String sortBy
 
-) {
-
-    if(!Set.of("name" , "email").contains(sortBy)){
-        sortBy = "name";
-    };
-     return userRepository.findAll(Sort.by(sortBy))
-              .stream()
-              .map(userMapper::toUserDto)
-              .toList();
+    ) {
+        return userService.getAllUsers(sortBy);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUser(@PathVariable Long id){
-    var user = userRepository.findById(id).orElse(null);
 
-    if(user == null){
-        return ResponseEntity.notFound().build();
-    }
-    var userDto = userMapper.toUserDto(user);
-    return ResponseEntity.ok(userDto);
+        var userDto = userService.getUser(id);
+        return ResponseEntity.ok(userDto);
     }
 
 
     @PostMapping()
     public ResponseEntity<?> registerUser(
-           @Valid @RequestBody UserRegisterRequest request,
-            UriComponentsBuilder uriBuilder
+            @Valid @RequestBody UserRegisterRequest request
     ){
 
-        var exists = userRepository.existsUserByEmail(request.getEmail());
-        if(exists){
-            return ResponseEntity.badRequest().body(Map.of("email" , "email is already registered."));
-        }
+      var userDto = userService.registerUser(request);
+      return   ResponseEntity.status(HttpStatus.CREATED).body(userDto);
 
-        //take request to the user
-        var user = userMapper.toEntity(request);
-        //hash the Password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        //save it to db
-        userRepository.save(user);
-        //send response only needed field
-        var userDto = userMapper.toUserDto(user);
-
-        var uri = uriBuilder.path("/users/{id}").buildAndExpand(userDto.getId()).toUri();
-        return ResponseEntity.created(uri).body(userDto);
     }
-
 
 
     @PutMapping("/{id}")
@@ -88,14 +64,9 @@ public List<UserDto> getAllUsers(
             @PathVariable(name = "id")   Long id,
             @RequestBody UserUpdateRequest request
     ){
-     var user = userRepository.findById(id).orElse(null);
-     if(user == null){
-       return  ResponseEntity.notFound().build();
-     }
 
-     userMapper.update(request , user);
-     userRepository.save(user);
-     return ResponseEntity.ok(userMapper.toUserDto(user));
+        var user = userService.updateUser(id, request);
+        return ResponseEntity.ok(user);
     }
 
 
@@ -103,35 +74,43 @@ public List<UserDto> getAllUsers(
     public ResponseEntity<Void> deleteUser(
             @PathVariable(name = "id") Long id
     ){
-    var user = userRepository.findById(id).orElse(null);
-
-    if(user == null){
-      return  ResponseEntity.notFound().build();
-    }
-
-    userRepository.delete(user);
-  return ResponseEntity.noContent().build();
+        userService.deleteUser(id);
+     return ResponseEntity.noContent().build();
 
     }
 
     @PostMapping("/{id}/change-password")
-    public ResponseEntity<Void> changePassword(
+    public ResponseEntity<Map<String ,String>> changePassword(
             @PathVariable Long id,
             @RequestBody ChangePasswordRequest request
     ) {
-        var user = userRepository.findById(id).orElse(null);
 
-        if (user == null) {
-            return ResponseEntity.notFound().build();
-        }
+        userService.resetPassword(id, request);
+        return ResponseEntity.ok().body(
+                Map.of("message", "Password changed")
+        );
+    }
 
-        if (!user.getPassword().equals(request.getOldPassword())) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
 
-        user.setPassword(request.getNewPassword());
-        userRepository.save(user);
-        return ResponseEntity.noContent().build();
+    @ExceptionHandler(EmailAlreadyExistException.class)
+    public ResponseEntity<Map<String , String>> handleEmailNotFoundException() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                Map.of("error", "Email already registered")
+        );
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String , String>> handleUserNotFoundedException() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                Map.of("error", "User not found")
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedUserException.class)
+    public ResponseEntity<Map<String, String>>  handleUnauthorizedException() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                Map.of("error", "Unauthorized")
+        );
     }
 }
 
