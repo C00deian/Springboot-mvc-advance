@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -27,6 +28,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
 @GetMapping
 public List<UserDto> getAllUsers(
@@ -68,9 +70,11 @@ public List<UserDto> getAllUsers(
 
         //take request to the user
         var user = userMapper.toEntity(request);
+        //hash the Password
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         //save it to db
         userRepository.save(user);
-        //send reposnse only needed field
+        //send response only needed field
         var userDto = userMapper.toUserDto(user);
 
         var uri = uriBuilder.path("/users/{id}").buildAndExpand(userDto.getId()).toUri();
