@@ -1,4 +1,4 @@
-package com.codewithmosh.store.controller;
+package com.codewithmosh.store.exceptions;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,7 +11,7 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    //    Extracting validation Error Message
+    //Extracting validation Error Message
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String , String>> handleValidationErrors(
             MethodArgumentNotValidException exception
