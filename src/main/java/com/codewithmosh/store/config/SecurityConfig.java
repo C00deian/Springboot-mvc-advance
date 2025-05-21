@@ -34,7 +34,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests( c -> c
 
                         .requestMatchers("/carts/**").permitAll()
-                        .requestMatchers("/users/**").permitAll()
+                        .requestMatchers( HttpMethod.POST, "/users").permitAll()
+                        .requestMatchers( HttpMethod.POST, "auth/login").permitAll()
                         .anyRequest().authenticated()
                 );
 
