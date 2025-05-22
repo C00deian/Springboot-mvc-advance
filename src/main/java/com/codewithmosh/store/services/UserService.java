@@ -4,6 +4,7 @@ import com.codewithmosh.store.Dtos.ChangePasswordRequest;
 import com.codewithmosh.store.Dtos.UserDto;
 import com.codewithmosh.store.Dtos.UserRegisterRequest;
 import com.codewithmosh.store.Dtos.UserUpdateRequest;
+import com.codewithmosh.store.entities.Role;
 import com.codewithmosh.store.exceptions.EmailAlreadyExistException;
 import com.codewithmosh.store.exceptions.UnauthorizedUserException;
 import com.codewithmosh.store.exceptions.UserNotFoundException;
@@ -36,6 +37,7 @@ public class UserService {
         var user = userMapper.toEntity(request);
         //hash the Password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(Role.USER);
         //save it to db
         userRepository.save(user);
         //send response only needed field
