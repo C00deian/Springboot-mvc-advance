@@ -60,8 +60,8 @@ public class JwtService {
     }
 
 
-    public String getEmailFromToken(String token) {
-        return getClaims(token)
-                .getSubject();
+    public Long getUserIdFromToken(String token) {
+
+      return Long.valueOf(getClaims(token).getSubject());
     }
 }

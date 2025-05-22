@@ -64,25 +64,31 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponseDto(accessToken));
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtResponseDto> refresh(
+            @CookieValue(name = "refresh_token") String refreshToken
 
-    @PostMapping("/validate")
-    public boolean validateToken(
-            @RequestHeader("Authorization") String authHeader
     ){
-      var token = authHeader.replace("Bearer ", "");
-      return  jwtService.validateToken(token);
-    }
+       if(!jwtService.validateToken(refreshToken)){
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+       }
 
+       var userId = jwtService.getUserIdFromToken(refreshToken);
+       var user = userRepository.findById(userId).orElseThrow();
+       var accessToken = jwtService.generateAccessToken(user);
+
+       return ResponseEntity.ok(new JwtResponseDto(accessToken));
+    }
 
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser() {
 
 //        extracting the current principa
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var email = (String) authentication.getPrincipal();
+        var userId = (Long) authentication.getPrincipal();
 
 //        lookup the User
-      var user =   userRepository.findByEmail(email).orElse(null);
+      var user =   userRepository.findById(userId).orElse(null);
         if(user == null) {
           ResponseEntity.notFound().build();
         }
