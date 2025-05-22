@@ -2,7 +2,11 @@ package com.codewithmosh.store.controller;
 
 import com.codewithmosh.store.Dtos.JwtResponseDto;
 import com.codewithmosh.store.Dtos.LoginRequest;
+import com.codewithmosh.store.Dtos.UserDto;
 import com.codewithmosh.store.exceptions.UnauthorizedUserException;
+import com.codewithmosh.store.exceptions.UserNotFoundException;
+import com.codewithmosh.store.mappers.UserMapper;
+import com.codewithmosh.store.repositories.UserRepository;
 import com.codewithmosh.store.services.AuthService;
 import com.codewithmosh.store.services.JwtService;
 import jakarta.validation.Valid;
@@ -12,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -21,7 +26,9 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
 
-//    private final AuthService authService;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    //    private final AuthService authService;
     private AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
@@ -48,6 +55,24 @@ public class AuthController {
     ){
       var token = authHeader.replace("Bearer ", "");
       return  jwtService.validateToken(token);
+    }
+
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser() {
+
+//        extracting the current principa
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var email = (String) authentication.getPrincipal();
+
+//        lookup the User
+      var user =   userRepository.findByEmail(email).orElse(null);
+        if(user == null) {
+            throw new UserNotFoundException();
+        }
+
+       var userDto =  userMapper.toUserDto(user);
+        return ResponseEntity.ok(userDto);
     }
 
 
