@@ -1,8 +1,10 @@
 package com.codewithmosh.store.controller;
 
+import com.codewithmosh.store.Dtos.JwtResponseDto;
 import com.codewithmosh.store.Dtos.LoginRequest;
 import com.codewithmosh.store.exceptions.UnauthorizedUserException;
 import com.codewithmosh.store.services.AuthService;
+import com.codewithmosh.store.services.JwtService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,9 +23,10 @@ public class AuthController {
 
 //    private final AuthService authService;
     private AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(
+    public ResponseEntity<JwtResponseDto> login(
             @Valid @RequestBody LoginRequest loginRequest
     ){
 //        authService.login(loginRequest);
@@ -34,7 +37,8 @@ public class AuthController {
                 )
 
         );
-        return ResponseEntity.ok().build();
+         var token = jwtService.generateToken(loginRequest.getEmail());
+        return ResponseEntity.ok(new JwtResponseDto(token));
     }
 
 
