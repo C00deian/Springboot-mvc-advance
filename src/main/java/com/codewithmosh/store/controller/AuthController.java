@@ -44,7 +44,10 @@ public class AuthController {
                 )
 
         );
-         var token = jwtService.generateToken(loginRequest.getEmail());
+
+        var user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
+
+         var token = jwtService.generateToken(user);
         return ResponseEntity.ok(new JwtResponseDto(token));
     }
 
