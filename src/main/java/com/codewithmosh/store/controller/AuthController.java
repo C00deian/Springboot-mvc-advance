@@ -3,6 +3,7 @@ package com.codewithmosh.store.controller;
 import com.codewithmosh.store.Dtos.JwtResponseDto;
 import com.codewithmosh.store.Dtos.LoginRequest;
 import com.codewithmosh.store.Dtos.UserDto;
+import com.codewithmosh.store.config.JwtConfig;
 import com.codewithmosh.store.exceptions.UnauthorizedUserException;
 import com.codewithmosh.store.exceptions.UserNotFoundException;
 import com.codewithmosh.store.mappers.UserMapper;
@@ -33,6 +34,7 @@ public class AuthController {
     //    private final AuthService authService;
     private AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final JwtConfig jwtConfig;
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponseDto> login(
@@ -56,7 +58,7 @@ public class AuthController {
          cookie.setHttpOnly(true);
          cookie.setPath("/auth/refresh");
          cookie.setSecure(true);
-         cookie.setMaxAge(604800);//7days
+         cookie.setMaxAge( Math.toIntExact(jwtConfig.getRefreshTokenExpiration()));//7days
          response.addCookie(cookie);
 
         return ResponseEntity.ok(new JwtResponseDto(accessToken));
@@ -82,7 +84,7 @@ public class AuthController {
 //        lookup the User
       var user =   userRepository.findByEmail(email).orElse(null);
         if(user == null) {
-            throw new UserNotFoundException();
+          ResponseEntity.notFound().build();
         }
 
        var userDto =  userMapper.toUserDto(user);
