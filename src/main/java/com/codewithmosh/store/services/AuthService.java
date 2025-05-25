@@ -1,10 +1,9 @@
 package com.codewithmosh.store.services;
 
-import com.codewithmosh.store.Dtos.LoginRequest;
-import com.codewithmosh.store.exceptions.UnauthorizedUserException;
+import com.codewithmosh.store.entities.User;
 import com.codewithmosh.store.repositories.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @AllArgsConstructor
@@ -12,27 +11,18 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
+    public User getCurrentUser() {
 
-    public void login(LoginRequest request){
+//        extracting the current principal
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId = (Long) authentication.getPrincipal();
 
-     var user = userRepository.findByEmail(request.getEmail()).orElse(null);
-     if(user == null){
-         throw new UnauthorizedUserException();
-     }
-
-     if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
-         throw new UnauthorizedUserException();
-
-     }
-
-
-
-
-
-
-
+//        lookup the User
+        return userRepository.findById(userId).orElse(null);
 
     }
+
+
+
 }

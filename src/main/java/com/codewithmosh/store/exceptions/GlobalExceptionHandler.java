@@ -1,6 +1,8 @@
 package com.codewithmosh.store.exceptions;
 
+import com.codewithmosh.store.Dtos.ErrorDto;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +12,14 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorDto> handleUnreadableException() {
+        return ResponseEntity.badRequest().body(
+                new ErrorDto("Invalid request body")
+        );
+    }
 
     //Extracting validation Error Message
     @ExceptionHandler(MethodArgumentNotValidException.class)

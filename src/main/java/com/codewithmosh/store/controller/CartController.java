@@ -80,7 +80,7 @@ public class CartController {
     @DeleteMapping("/{cartId}/items")
         public ResponseEntity<Void> clearCart(@PathVariable UUID cartId){
 
-        cartService.deleteCart(cartId);
+        cartService.clearCart(cartId);
         return ResponseEntity.noContent().build();
     }
 
