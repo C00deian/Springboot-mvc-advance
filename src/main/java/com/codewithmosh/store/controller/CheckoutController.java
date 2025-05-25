@@ -35,38 +35,24 @@ public class CheckoutController {
     @PostMapping
     public ResponseEntity<?> checkout(
             @Valid @RequestBody CheckoutRequest request) {
-        var cartId = cartRepository.getCartWithItems(request.getCartId()).orElse(null);
-        if (cartId == null) {
+        var cart = cartRepository.getCartWithItems(request.getCartId()).orElse(null);
+        if (cart == null) {
             return ResponseEntity.badRequest().body(
                     new ErrorDto("Cart not found")
             );
         }
 
-        if(cartId.getItems().isEmpty()){
+        if(cart.getItems().isEmpty()){
             return ResponseEntity.badRequest().body(
                    new ErrorDto("Cart is empty")
             );
         }
 
-        var  order = new Order();
-        order.setTotalPrice(cartId.getTotalPrice());
-        order.setStatus(OrderStatus.PENDING);
-        order.setCustomer(authService.getCurrentUser());
-
-        cartId.getItems().forEach(item -> {
-
-            var orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setQuantity(item.getQuantity());
-            orderItem.setProduct(item.getProduct());
-            orderItem.setTotalPrice(item.getTotalPrice());
-            orderItem.setUnitPrice(item.getProduct().getPrice());
-            order.getItems().add(orderItem);
-        });
+        var order= Order.fromCart(cart, authService.getCurrentUser());
 
         orderRepository.save(order);
+        cartService.clearCart(cart.getId());
 
-        cartService.clearCart(cartId.getId());
 return ResponseEntity.ok(new CheckoutResponse(order.getId()));
     }
 
