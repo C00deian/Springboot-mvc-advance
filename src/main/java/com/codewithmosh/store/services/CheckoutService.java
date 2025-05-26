@@ -3,7 +3,9 @@ package com.codewithmosh.store.services;
 import com.codewithmosh.store.Dtos.CheckoutRequest;
 import com.codewithmosh.store.Dtos.CheckoutResponse;
 import com.codewithmosh.store.Dtos.ErrorDto;
+import com.codewithmosh.store.Dtos.WebhookRequest;
 import com.codewithmosh.store.entities.Order;
+import com.codewithmosh.store.entities.PaymentStatus;
 import com.codewithmosh.store.exceptions.CartEmptyException;
 import com.codewithmosh.store.exceptions.CartNotFoundException;
 import com.codewithmosh.store.exceptions.PaymentException;
@@ -56,6 +58,18 @@ public class CheckoutService {
         }
     }
 
+
+
+    public void handleWebhookEvent(WebhookRequest request){
+
+        paymentGateway
+                .parseWebhookRequest(request)
+                .ifPresent(paymentResult -> {
+                    var order =  orderRepository.findById(paymentResult.getOrderId()).orElseThrow();
+                    order.setStatus(paymentResult.getPaymentStatus());
+                    orderRepository.save(order);
+                });
+    }
 
     @ExceptionHandler(CartNotFoundException.class)
     public ResponseEntity<ErrorDto> handleCartNotFoundException() {
