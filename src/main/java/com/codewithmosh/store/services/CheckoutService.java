@@ -17,7 +17,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class CheckoutService {
     @Value("${websiteUrl}")
     private  String webUrl;
 
+    @Transactional
     public CheckoutResponse checkout(CheckoutRequest request) throws StripeException {
 
 
@@ -50,34 +54,45 @@ public class CheckoutService {
 
 
 //        Create a checkout session
-        var builder = SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(webUrl + "/checkout-success?orderId=" + order.getId())
-                .setCancelUrl(webUrl + "/checkout-cancel");
 
-        order.getItems().forEach(item -> {
-            var lineItem = SessionCreateParams.LineItem.builder()
-                    .setQuantity(Long.valueOf(item.getQuantity()))
-                    .setPriceData(
-                            SessionCreateParams.LineItem.PriceData.builder()
-                                    .setCurrency("inr")
-                                    .setUnitAmountDecimal(item.getUnitPrice())
-                                    .setProductData(
-                                            SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                                    .setName(item.getProduct().getName())
-                                                    .build()
-                                    )
-                                    .build()
-                    ).build();
-            builder.addLineItem(lineItem);
-        });
+        try{
+            var builder = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl(webUrl + "/checkout-success?orderId=" + order.getId())
+                    .setCancelUrl(webUrl + "/checkout-cancel");
 
-      var session = Session.create(builder.build());
+            order.getItems().forEach(item -> {
+                var lineItem = SessionCreateParams.LineItem.builder()
+                        .setQuantity(Long.valueOf(item.getQuantity()))
+                        .setPriceData(
+                                SessionCreateParams.LineItem.PriceData.builder()
+                                        .setCurrency("usd")
+                                        .setUnitAmountDecimal(
+                                                item.getUnitPrice()
+                                                .multiply(BigDecimal.valueOf(100)))
+
+                                        .setProductData(
+                                                SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                        .setName(item.getProduct().getName())
+                                                        .build()
+                                        )
+                                        .build()
+                        ).build();
+                builder.addLineItem(lineItem);
+            });
+
+            var session = Session.create(builder.build());
 
 
 
-        cartService.clearCart(cart.getId());
-        return new CheckoutResponse(order.getId(),session.getUrl());
+            cartService.clearCart(cart.getId());
+            return new CheckoutResponse(order.getId(),session.getUrl());
+
+        } catch (StripeException ex) {
+            System.out.println(ex.getMessage());
+        orderRepository.delete(order);
+        throw ex;
+        }
     }
 
 
